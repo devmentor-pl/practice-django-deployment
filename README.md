@@ -2,7 +2,7 @@
 
 &nbsp;
 
-# {module-name-in-pdf}
+# Practice Django Deployment
 
 
 
