@@ -1,0 +1,7 @@
+services:
+  web:
+    environment:
+      - DEBUG=True
+    volumes:
+      - .:/app
+    
