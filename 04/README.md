@@ -1,64 +1,43 @@
-> :white_check_mark: *Jeśli będzziesz mieć problem z rozwiązaniem tego zadania, poproś o pomoc na odpowiednim kanale na Slacku, tj. `s14-django-deployment` (dotyczy [mentee](https://devmentor.pl/mentoring/)) lub na ogólnodostępnej i bezpłatnej [społeczności na Discordzie](https://devmentor.pl/discord). Pamiętaj, aby treść Twojego wpisu spełniała [odpowiednie kryteria](https://devmentor.pl/jak-prosic-o-pomoc/).*
+1. Zainstaluj Docker na VPS
 
- 
+2. Przed pierwszym pushem (jednorazowo na VPS): wykonaj w katalogu `/root` polecenie `git clone ADRES_REPOZYTORIUM practice-django-deployment`
 
-# `#04` Django: Deployment aplikacji
+3. Skopiuj `.env` na VPS do katalogu `/root/practice-django-deployment`
+```env
+DJANGO_SECRET_KEY=twoj_klucz
+DEBUG=False
+ALLOWED_HOSTS=localhost,127.0.0.1,TWOJE_IP
+CSRF_TRUSTED_ORIGIN=http://TWOJE_IP:PORT
+```
 
-Twoim zadaniem jest przygotowanie **pipeline CI/CD**, który automatycznie wdraża aplikację na serwer po pushu do gałęzi `main`.
+4. Skonfiguruj GitHub Secrets. W repozytorium GitHub przejdź do: 
+`Settings → Secrets and variables → Actions` 
+Dodaj wymagane sekrety:
+`SSH_HOST` Adres serwera VPS
+`SSH_USER` Użytkownik SSH
+`SSH_PRIVATE_KEY` Klucz prywatny SSH
+`SSH_PORT` Port SSH przypisany do VPS
 
----
+5. Utwórz gałąź main. Otwórz terminal w katalogu projektu i wykonaj:
+`git add .`
+`git commit -m "Initial deployment"`
+`git push origin main`
 
-## Zakres zadania
+6. Deploy aplikacji Django na VPS uruchamiany jest automatycznie przez GitHub Actions po wysłaniu zmian do gałęzi main.
+Po wykonaniu git push GitHub Actions automatycznie:
+- Wykryje zmiany w gałęzi main
+- Uruchomi workflow zapisany w deploy.yml
+- Połączy się z VPS przez SSH
+- Wykona git pull, aktualizując kod aplikacji na serwerze
+- Zbuduje i uruchomi kontenery poleceniem docker compose up -d --build
+- Wykona migracje bazy danych przez python manage.py migrate
+- Zbierze pliki statyczne przez python manage.py collectstatic --noinput
 
-1. Utwórz workflow GitHub Actions w `.github/workflows/deploy.yml`, który uruchamia się na:
-
-* `push` do gałęzi `main`.
-
-2. W workflow wykonaj kroki:
-
-* checkout repozytorium,
-* połączenie przez SSH do serwera (użyj klucza prywatnego z `GitHub Secrets`),
-* na serwerze w katalogu projektu wykonaj:
-
-  * `git pull`,
-  * `docker compose up -d --build`,
-  * `docker compose exec -T web python manage.py migrate`,
-  * `docker compose exec -T web python manage.py collectstatic --noinput`.
-
-3. Dodaj do `README.md` sekcję:
-
-* jakie `Secrets` są wymagane (nazwy),
-* jak uruchomić pierwszy deploy (np. przez pierwszy push do `main`).
-
----
-
-## Wymagania funkcjonalne
-
-* Po pushu do `main` workflow kończy się sukcesem.
-* Na serwerze po zakończeniu workflow:
-
-  * kontenery działają,
-  * migracje są wykonane,
-  * statyczne pliki są zebrane (`collectstatic`).
-
----
-
-## Wskazówki
-
-* Użyj `docker compose exec -T`, żeby uniknąć problemów z TTY w CI.
-* Nie wpisuj danych dostępowych do serwera w repo — tylko `GitHub Secrets`.
-* Jeśli używasz innej nazwy usługi niż `web`, dostosuj komendy.
-
----
-
-## Twoje rozwiązanie powinno zawierać
-
-* plik `.github/workflows/deploy.yml`,
-* aktualizację `README.md` z listą wymaganych `Secrets`,
-* instrukcję, jak zweryfikować, że deploy się wykonał (np. `docker ps` / logi).
-
- 
-
-> :no_entry: *Jeśli nie posiadasz materiałów do tego zadania tj. **PDF, projekt + Code Review**, znajdziesz je na stronie [devmentor.pl](https://devmentor.pl/workshop-django-deployment)*
-
-> :arrow_left: [*poprzednie zadanie*](./../03) | [*następne zadanie*](./../05) :arrow_right:
+7. Aby sprawdzić wyniku wdrożenia przejdź do następującej zakładki na GitHubie:
+`Actions → Deploy Django App`
+- Otwórz najnowsze uruchomienie workflow i sprawdź jego logi.
+- Zielony znacznik – workflow zakończył się pomyślnie.
+- Czerwony znacznik – wystąpił błąd, którego szczegóły znajdują się w logach
+- Następnie sprawdź działanie aplikacji w przeglądarce, korzystając z publicznego adresu i portu przydzielonego na VPS
+- Możesz również zalogować się na serwer i sprawdzić stan kontenerów poleceniem `docker compose ps`
+- Po poprawnym wykonaniu pierwszego deployu kolejne zmiany wysłane do gałęzi main będą automatycznie wdrażane na VPS, bez konieczności ręcznego logowania się na serwer

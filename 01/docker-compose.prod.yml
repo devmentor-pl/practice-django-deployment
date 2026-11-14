@@ -1,0 +1,7 @@
+services:
+  web:
+    environment:
+      - DEBUG=False
+    ports: !override
+      - "80:8000"
+    volumes: []
